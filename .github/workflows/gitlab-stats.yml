@@ -16,7 +16,7 @@ jobs:
         with:
           gitlab_host: "https://dev.hummatech.com"
           gitlab_token: ${{ secrets.GITLAB_TOKEN }}
-          gitlab_user: "username_kamu_di_gitlab"
+          gitlab_user: "Dithoss"
 
       - name: Commit & Push
         run: |
