@@ -102,6 +102,10 @@ jobs:
             
             <defs>
               <style>
+                <![CDATA[
+                svg {
+                  color-scheme: light dark;
+                }
                 .title { 
                   font-size: 16px; 
                   font-weight: 600; 
@@ -131,14 +135,22 @@ jobs:
                   stroke: rgba(27,31,35,0.06);
                   stroke-width: 1;
                 }
-                
-                @media (prefers-color-scheme: dark) {
-                  .title { fill: #f0f6fc; }
-                  .month-label, .day-label, .legend-text, .stats-text { fill: #8b949e; }
-                  .contribution-cell { stroke: rgba(240,246,252,0.1); }
-                }
+                ]]>
               </style>
-            </defs>`;
+            </defs>
+            
+            <style>
+              <![CDATA[
+              @media (prefers-color-scheme: dark) {
+                .title { fill: #e6edf3 !important; }
+                .month-label { fill: #7d8590 !important; }
+                .day-label { fill: #7d8590 !important; }
+                .legend-text { fill: #7d8590 !important; }
+                .stats-text { fill: #7d8590 !important; }
+                .contribution-cell { stroke: rgba(205,217,229,0.1) !important; }
+              }
+              ]]>
+            </style>`;
 
           svg += `<text x="${padding}" y="${padding + 16}" class="title">GitLab Contributions</text>`;
 
