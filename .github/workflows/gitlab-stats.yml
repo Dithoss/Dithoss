@@ -1,8 +1,8 @@
 name: Update GitLab Stats
 on:
   schedule:
-    - cron: "0 0 * * *" # update tiap hari jam 00:00 UTC
-  workflow_dispatch: # bisa dijalankan manual dari tab Actions
+    - cron: "0 0 * * *" 
+  workflow_dispatch:
 
 jobs:
   update:
