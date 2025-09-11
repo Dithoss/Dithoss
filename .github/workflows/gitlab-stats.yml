@@ -1,9 +1,9 @@
 name: Update GitLab Stats
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: "0 0 * * *" 
+  workflow_dispatch:
 
 jobs:
   update:
@@ -13,33 +13,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
+      - name: Generate placeholder SVG
+        run: echo '<svg xmlns="http://www.w3.org/2000/svg"><text x="10" y="20">GitLab Contributions (placeholder)</text></svg>' > gitlab-contributions.svg
 
-      - name: Install dependencies
-        run: |
-          npm install axios chartjs-node-canvas
+      - name: Verify file exists
+        run: ls -l gitlab-contributions.svg
 
-      - name: Fetch GitLab activity
-        run: node ./scripts/fetch-gitlab-activity.js
-        env:
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-
-      - name: Check activity.json exists
-        run: ls -l activity.json || echo "❌ activity.json missing"
-
-      - name: Generate graph
-        run: node ./scripts/generate-graph.js activity.json gitlab-contributions.svg
-
-      - name: Verify output file
-        run: ls -l gitlab-contributions.svg || echo "❌ SVG not created"
-
-      - name: Commit graph
+      - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add gitlab-contributions.svg
-          git commit -m "Update GitLab contributions" || echo "No changes"
+          git commit -m "Update GitLab stats" || echo "No changes"
           git push
