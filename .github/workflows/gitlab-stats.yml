@@ -1,9 +1,9 @@
 name: Update GitLab Stats
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"  
 
 jobs:
   update:
@@ -20,23 +20,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm init -y
-          npm install axios chartjs-node-canvas # contoh library
+          npm install axios chartjs-node-canvas
 
       - name: Fetch GitLab activity
-        run: |
-          node ./scripts/fetch-gitlab-activity.js > activity.json
+        run: node ./scripts/fetch-gitlab-activity.js
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
 
       - name: Generate graph
-        run: |
-          node ./scripts/generate-graph.js activity.json gitlab-contributions.svg
+        run: node ./scripts/generate-graph.js activity.json gitlab-contributions.svg
 
-      - name: Commit & Push
+      - name: Commit graph
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add gitlab-contributions.svg
-          git commit -m "Update GitLab stats" || echo "No changes"
+          git commit -m "Update GitLab contributions" || echo "No changes"
           git push

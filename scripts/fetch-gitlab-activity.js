@@ -5,24 +5,23 @@ const token = process.env.GITLAB_TOKEN;
 const username = "Dithoss"; 
 const host = "https://dev.hummatech.com";
 
-async function main() {
-  try {
-    const users = await axios.get(`${host}/api/v4/users?username=${username}`, {
-      headers: { "PRIVATE-TOKEN": token },
-    });
-    if (!users.data.length) throw new Error("User not found");
-    const userId = users.data[0].id;
-
-    const events = await axios.get(`${host}/api/v4/users/${userId}/events`, {
-      headers: { "PRIVATE-TOKEN": token },
-    });
-
-    fs.writeFileSync("activity.json", JSON.stringify(events.data, null, 2));
-    console.log("Saved activity.json");
-  } catch (err) {
-    console.error("Error:", err.response ? err.response.data : err.message);
-    process.exit(1);
+async function run() {
+  const userResp = await axios.get(`${host}/api/v4/users?username=${username}`, {
+    headers: { "PRIVATE-TOKEN": token },
+  });
+  if (!userResp.data || userResp.data.length === 0) {
+    throw new Error("User not found");
   }
+  const userId = userResp.data[0].id;
+
+  const eventsResp = await axios.get(`${host}/api/v4/users/${userId}/events`, {
+    headers: { "PRIVATE-TOKEN": token },
+  });
+
+  fs.writeFileSync("activity.json", JSON.stringify(eventsResp.data, null, 2));
 }
 
-main();
+run().catch(err => {
+  console.error(err.response ? err.response.data : err.message);
+  process.exit(1);
+});
