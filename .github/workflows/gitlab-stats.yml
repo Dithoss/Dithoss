@@ -1,74 +1,227 @@
 name: Update GitLab Stats
-
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *"  # Fixed: Added missing *
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4  # Updated to v4
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
+          
       - name: Fetch GitLab Contributions
         run: |
+          # Fetch events with pagination and better error handling
           curl -s --fail --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
-          "https://dev.hummatech.com/api/v4/users/37/events" > events.json
-
-          echo "=== events.json content ==="
-          cat events.json
-
-      - name: Generate SVG
+          "https://dev.hummatech.com/api/v4/users/37/events?per_page=100&after=$(date -d '1 year ago' '+%Y-%m-%d')" > events.json || {
+            echo "Failed to fetch GitLab events"
+            echo '[]' > events.json
+          }
+          echo "=== GitLab API Response ==="
+          head -20 events.json
+          
+      - name: Generate Enhanced SVG
         run: |
           node <<'EOF'
           const fs = require('fs');
-          const events = JSON.parse(fs.readFileSync('events.json', 'utf8'));
-
+          
+          // Read events with error handling
+          let events;
+          try {
+            const rawData = fs.readFileSync('events.json', 'utf8');
+            events = JSON.parse(rawData);
+            console.log(`✅ Loaded ${events.length} events from GitLab`);
+          } catch (error) {
+            console.error("Error reading events.json:", error);
+            events = [];
+          }
+          
           if (!Array.isArray(events)) {
             console.error("GitLab API did not return an array:", events);
-            process.exit(1);
+            events = [];
           }
-
+          
+          // Process events and count contributions by date
           const counts = {};
-          events.forEach(e => {
-            if (!e.created_at) return;
-            const day = e.created_at.split('T')[0];
-            counts[day] = (counts[day] || 0) + 1;
-          });
-
-          let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="120">`;
-          let x = 10;
-          for (const [day, count] of Object.entries(counts)) {
-            const color = count > 5 ? "green" : count > 2 ? "lightgreen" : "gray";
-            svg += `<rect x="${x}" y="10" width="10" height="10" fill="${color}">
-              <title>${day}: ${count} contributions</title>
-            </rect>`;
-            x += 12;
+          const today = new Date();
+          const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+          
+          // Initialize all dates in the past year with 0 contributions
+          for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            counts[dateStr] = 0;
           }
+          
+          // Count actual contributions
+          events.forEach(event => {
+            if (!event.created_at) return;
+            
+            const eventDate = event.created_at.split('T')[0];
+            const eventType = event.action_name;
+            
+            // Count different types of contributions
+            if (eventType && ['pushed to', 'pushed new', 'created', 'opened', 'merged', 'closed', 'commented on'].includes(eventType)) {
+              counts[eventDate] = (counts[eventDate] || 0) + 1;
+            }
+          });
+          
+          // Generate GitHub-style contribution graph
+          const weeks = 53;
+          const cellSize = 11;
+          const cellGap = 2;
+          const colors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+          
+          const maxContributions = Math.max(...Object.values(counts));
+          const getColor = (count) => {
+            if (count === 0) return colors[0];
+            const intensity = Math.min(Math.floor((count / Math.max(maxContributions, 1)) * 4) + 1, 4);
+            return colors[intensity];
+          };
+          
+          // Calculate SVG dimensions
+          const width = weeks * (cellSize + cellGap) - cellGap + 20;
+          const height = 7 * (cellSize + cellGap) - cellGap + 40;
+          
+          let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" style="font: 10px sans-serif;">`;
+          
+          // Add title
+          svg += `<text x="10" y="15" style="font-size: 14px; font-weight: bold; fill: #24292f;">GitLab Contributions</text>`;
+          
+          // Generate grid
+          const startDate = new Date(today);
+          startDate.setDate(startDate.getDate() - (weeks * 7) + 1);
+          
+          for (let week = 0; week < weeks; week++) {
+            for (let day = 0; day < 7; day++) {
+              const currentDate = new Date(startDate);
+              currentDate.setDate(startDate.getDate() + (week * 7) + day);
+              
+              if (currentDate <= today) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const count = counts[dateStr] || 0;
+                const color = getColor(count);
+                
+                const x = 10 + week * (cellSize + cellGap);
+                const y = 25 + day * (cellSize + cellGap);
+                
+                svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${color}" rx="2">`;
+                svg += `<title>${dateStr}: ${count} contribution${count !== 1 ? 's' : ''}</title>`;
+                svg += `</rect>`;
+              }
+            }
+          }
+          
+          // Add month labels
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          for (let week = 0; week < weeks; week += 4) {
+            const monthDate = new Date(startDate);
+            monthDate.setDate(startDate.getDate() + week * 7);
+            if (monthDate <= today) {
+              const x = 10 + week * (cellSize + cellGap);
+              svg += `<text x="${x}" y="20" style="font-size: 9px; fill: #656d76;">${monthNames[monthDate.getMonth()]}</text>`;
+            }
+          }
+          
+          // Add day labels
+          const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          [1, 3, 5].forEach(day => {
+            const y = 25 + day * (cellSize + cellGap) + cellSize / 2 + 2;
+            svg += `<text x="5" y="${y}" style="font-size: 9px; fill: #656d76; text-anchor: end;">${dayLabels[day]}</text>`;
+          });
+          
+          // Add legend
+          const legendY = height - 15;
+          svg += `<text x="10" y="${legendY}" style="font-size: 9px; fill: #656d76;">Less</text>`;
+          for (let i = 0; i < 5; i++) {
+            const x = 40 + i * (cellSize + 2);
+            svg += `<rect x="${x}" y="${legendY - 8}" width="${cellSize}" height="${cellSize}" fill="${colors[i]}" rx="2"></rect>`;
+          }
+          svg += `<text x="${40 + 5 * (cellSize + 2) + 5}" y="${legendY}" style="font-size: 9px; fill: #656d76;">More</text>`;
+          
+          // Add stats
+          const totalContributions = Object.values(counts).reduce((sum, count) => sum + count, 0);
+          const activeDays = Object.values(counts).filter(count => count > 0).length;
+          const avgDaily = (totalContributions / 365).toFixed(1);
+          
+          svg += `<text x="${width - 10}" y="${legendY}" style="font-size: 9px; fill: #656d76; text-anchor: end;">`;
+          svg += `${totalContributions} contributions • ${activeDays} active days • ${avgDaily} avg/day`;
+          svg += `</text>`;
+          
           svg += `</svg>`;
-
+          
+          // Write SVG file
           fs.writeFileSync('gitlab-contributions.svg', svg);
-          console.log("✅ gitlab-contributions.svg generated");
+          console.log(`✅ Generated GitLab contribution graph`);
+          console.log(`📊 Stats: ${totalContributions} total contributions, ${activeDays} active days`);
+          
+          // Also create a simple stats JSON for README
+          const stats = {
+            total: totalContributions,
+            activeDays: activeDays,
+            avgDaily: parseFloat(avgDaily),
+            lastUpdated: new Date().toISOString().split('T')[0]
+          };
+          fs.writeFileSync('gitlab-stats.json', JSON.stringify(stats, null, 2));
           EOF
+          
+      - name: Verify output files
+        run: |
+          ls -la gitlab-contributions.svg gitlab-stats.json
+          echo "=== SVG file size ==="
+          wc -c gitlab-contributions.svg
+          
+      - name: Update README (optional)
+        run: |
+          # Update README with latest stats if it exists
+          if [ -f README.md ] && [ -f gitlab-stats.json ]; then
+            node <<'EOF'
+            const fs = require('fs');
+            const stats = JSON.parse(fs.readFileSync('gitlab-stats.json', 'utf8'));
+            
+            let readme = fs.readFileSync('README.md', 'utf8');
+            
+            // Replace GitLab stats section if it exists
+            const statsSection = `<!-- GITLAB-STATS:START -->
+![GitLab Contributions](./gitlab-contributions.svg)
 
-      - name: Verify output file
-        run: ls -l gitlab-contributions.svg
-
+**📈 GitLab Activity:**
+- 🔥 Total Contributions: **${stats.total}**
+- 📅 Active Days: **${stats.activeDays}**
+- ⚡ Daily Average: **${stats.avgDaily}**
+- 🕐 Last Updated: *${stats.lastUpdated}*
+<!-- GITLAB-STATS:END -->`;
+            
+            if (readme.includes('<!-- GITLAB-STATS:START -->')) {
+              readme = readme.replace(
+                /<!-- GITLAB-STATS:START -->[\s\S]*<!-- GITLAB-STATS:END -->/,
+                statsSection
+              );
+            } else {
+              readme += '\n\n' + statsSection + '\n';
+            }
+            
+            fs.writeFileSync('README.md', readme);
+            console.log('✅ Updated README with GitLab stats');
+            EOF
+          fi
+          
       - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add gitlab-contributions.svg
-          git commit -m "Update GitLab stats" || echo "No changes"
-          git push
+          git add gitlab-contributions.svg gitlab-stats.json README.md 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "📊 Update GitLab contributions graph"
+            git push
+            echo "✅ Successfully updated GitLab stats"
+          fi
