@@ -15,12 +15,33 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Generate simple SVG
+      - name: Fetch GitLab Contributions
         run: |
-          echo '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="50">
-          <rect width="400" height="50" fill="black"/>
-          <text x="10" y="30" font-size="20" fill="white">GitLab Contributions (Placeholder)</text>
-          </svg>' > gitlab-contributions.svg
+          curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
+          "https://gitlab.com/api/v4/users/<USERNAME>/events" > events.json
+
+      - name: Generate SVG
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const events = JSON.parse(fs.readFileSync('events.json'));
+          const counts = {};
+          events.forEach(e => {
+            const day = e.created_at.split('T')[0];
+            counts[day] = (counts[day] || 0) + 1;
+          });
+          let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="100">`;
+          let x = 10;
+          for (const [day, count] of Object.entries(counts)) {
+            const color = count > 5 ? "green" : count > 2 ? "lightgreen" : "gray";
+            svg += `<rect x="${x}" y="10" width="10" height="10" fill="${color}">
+              <title>${day}: ${count} contributions</title>
+            </rect>`;
+            x += 12;
+          }
+          svg += `</svg>`;
+          fs.writeFileSync('gitlab-contributions.svg', svg);
+          EOF
 
       - name: Verify file exists
         run: ls -l gitlab-contributions.svg
@@ -32,35 +53,3 @@ jobs:
           git add gitlab-contributions.svg
           git commit -m "Update GitLab stats" || echo "No changes"
           git push
-
-      - name: Fetch GitLab Contributions
-        run: |
-          curl -s "https://gitlab.com/api/v4/users/<USERNAME>/events" > events.json
-
-      - name: Generate SVG
-        run: |
-          node <<'EOF'
-          const fs = require('fs');
-          const events = JSON.parse(fs.readFileSync('events.json'));
-          
-          // hitung jumlah kontribusi per hari
-          const counts = {};
-          events.forEach(e => {
-            const day = e.created_at.split('T')[0];
-            counts[day] = (counts[day] || 0) + 1;
-          });
-      
-          // bikin kotak-kotak sederhana
-          let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="100">`;
-          let x = 10;
-          for (const [day, count] of Object.entries(counts)) {
-            const color = count > 5 ? "green" : count > 2 ? "lightgreen" : "gray";
-            svg += `<rect x="${x}" y="10" width="10" height="10" fill="${color}">
-              <title>${day}: ${count} contributions</title>
-            </rect>`;
-            x += 12;
-          }
-          svg += `</svg>`;
-
-    fs.writeFileSync('gitlab-contributions.svg', svg);
-    EOF
