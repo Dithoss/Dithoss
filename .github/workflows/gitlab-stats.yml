@@ -29,10 +29,10 @@ jobs:
 
       - name: Generate graph
         run: node ./scripts/generate-graph.js activity.json gitlab-contributions.svg
-
-      - name: Debug - list files
-        run: ls -lah
-
+      
+      - name: Verify output file
+        run: ls -l gitlab-contributions.svg
+      
       - name: Commit graph
         run: |
           git config user.name "github-actions[bot]"
