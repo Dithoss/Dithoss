@@ -1,7 +1,7 @@
 name: Update GitLab Stats
 on:
   schedule:
-    - cron: "0 0 * * *"  # Fixed: Added missing *
+    - cron: "0 0 * * *"
   workflow_dispatch:
 permissions:
   contents: write
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4  # Updated to v4
+        uses: actions/checkout@v4
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -19,7 +19,6 @@ jobs:
           
       - name: Fetch GitLab Contributions
         run: |
-          # Fetch events with pagination and better error handling
           curl -s --fail --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
           "https://dev.hummatech.com/api/v4/users/37/events?per_page=100&after=$(date -d '1 year ago' '+%Y-%m-%d')" > events.json || {
             echo "Failed to fetch GitLab events"
@@ -28,9 +27,9 @@ jobs:
           echo "=== GitLab API Response ==="
           head -20 events.json
           
-      - name: Generate Enhanced SVG
+      - name: Create Node.js script
         run: |
-          node <<'EOF'
+          cat > generate-svg.js << 'SCRIPT_EOF'
           const fs = require('fs');
           
           // Read events with error handling
@@ -170,7 +169,10 @@ jobs:
             lastUpdated: new Date().toISOString().split('T')[0]
           };
           fs.writeFileSync('gitlab-stats.json', JSON.stringify(stats, null, 2));
-          EOF
+          SCRIPT_EOF
+          
+      - name: Generate Enhanced SVG
+        run: node generate-svg.js
           
       - name: Verify output files
         run: |
@@ -178,40 +180,46 @@ jobs:
           echo "=== SVG file size ==="
           wc -c gitlab-contributions.svg
           
-      - name: Update README (optional)
+      - name: Create README update script
         run: |
-          # Update README with latest stats if it exists
-          if [ -f README.md ] && [ -f gitlab-stats.json ]; then
-            node <<'EOF'
-            const fs = require('fs');
-            const stats = JSON.parse(fs.readFileSync('gitlab-stats.json', 'utf8'));
-            
-            let readme = fs.readFileSync('README.md', 'utf8');
-            
-            // Replace GitLab stats section if it exists
-            const statsSection = `<!-- GITLAB-STATS:START -->
-![GitLab Contributions](./gitlab-contributions.svg)
-
-**📈 GitLab Activity:**
-- 🔥 Total Contributions: **${stats.total}**
-- 📅 Active Days: **${stats.activeDays}**
-- ⚡ Daily Average: **${stats.avgDaily}**
-- 🕐 Last Updated: *${stats.lastUpdated}*
-<!-- GITLAB-STATS:END -->`;
-            
-            if (readme.includes('<!-- GITLAB-STATS:START -->')) {
-              readme = readme.replace(
-                /<!-- GITLAB-STATS:START -->[\s\S]*<!-- GITLAB-STATS:END -->/,
-                statsSection
-              );
-            } else {
-              readme += '\n\n' + statsSection + '\n';
-            }
-            
-            fs.writeFileSync('README.md', readme);
-            console.log('✅ Updated README with GitLab stats');
-            EOF
-          fi
+          cat > update-readme.js << 'README_EOF'
+          const fs = require('fs');
+          
+          // Check if files exist
+          if (!fs.existsSync('README.md') || !fs.existsSync('gitlab-stats.json')) {
+            console.log('README.md or gitlab-stats.json not found, skipping update');
+            process.exit(0);
+          }
+          
+          const stats = JSON.parse(fs.readFileSync('gitlab-stats.json', 'utf8'));
+          let readme = fs.readFileSync('README.md', 'utf8');
+          
+          // Replace GitLab stats section if it exists
+          const statsSection = `<!-- GITLAB-STATS:START -->
+          ![GitLab Contributions](./gitlab-contributions.svg)
+          
+          **📈 GitLab Activity:**
+          - 🔥 Total Contributions: **${stats.total}**
+          - 📅 Active Days: **${stats.activeDays}**
+          - ⚡ Daily Average: **${stats.avgDaily}**
+          - 🕐 Last Updated: *${stats.lastUpdated}*
+          <!-- GITLAB-STATS:END -->`;
+          
+          if (readme.includes('<!-- GITLAB-STATS:START -->')) {
+            readme = readme.replace(
+              /<!-- GITLAB-STATS:START -->[\s\S]*<!-- GITLAB-STATS:END -->/,
+              statsSection
+            );
+          } else {
+            readme += '\n\n' + statsSection + '\n';
+          }
+          
+          fs.writeFileSync('README.md', readme);
+          console.log('✅ Updated README with GitLab stats');
+          README_EOF
+          
+      - name: Update README
+        run: node update-readme.js
           
       - name: Commit & Push
         run: |
