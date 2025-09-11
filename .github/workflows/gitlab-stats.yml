@@ -2,7 +2,7 @@ name: Update GitLab Stats
 
 on:
   schedule:
-    - cron: "0 0 * * *" 
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,8 +13,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Generate placeholder SVG
-        run: echo '<svg xmlns="http://www.w3.org/2000/svg"><text x="10" y="20">GitLab Contributions (placeholder)</text></svg>' > gitlab-contributions.svg
+      - name: Generate simple SVG
+        run: |
+          echo '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="50">
+          <rect width="400" height="50" fill="black"/>
+          <text x="10" y="30" font-size="20" fill="white">GitLab Contributions (Placeholder)</text>
+          </svg>' > gitlab-contributions.svg
 
       - name: Verify file exists
         run: ls -l gitlab-contributions.svg
