@@ -2,7 +2,7 @@ name: Update GitLab Stats
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *" # jalan tiap hari jam 00:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -13,30 +13,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Generate GitLab statistics
+        uses: lorislab/gitlab-statistics-action@v1.0.0
         with:
-          node-version: "18"
-
-      - name: Install dependencies
-        run: |
-          npm init -y
-          npm install axios chartjs-node-canvas # contoh library
-
-      - name: Fetch GitLab activity
-        run: |
-          node ./scripts/fetch-gitlab-activity.js > activity.json
-        env:
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-
-      - name: Generate graph
-        run: |
-          node ./scripts/generate-graph.js activity.json gitlab-contributions.svg
+          gitlabToken: ${{ secrets.GITLAB_TOKEN }}
+          gitlabUrl: "https://dev.hummatech.com"
+          gitlabUser: "Dithoss"
 
       - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add gitlab-contributions.svg
+          git add .
           git commit -m "Update GitLab stats" || echo "No changes"
           git push
