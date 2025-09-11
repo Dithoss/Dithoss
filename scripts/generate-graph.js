@@ -12,12 +12,17 @@ async function run() {
   const outFile = args[3];
 
   if (!fs.existsSync(inFile)) {
-    console.error("Input file not found:", inFile);
+    console.error("❌ Input file not found:", inFile);
     process.exit(1);
   }
 
   const raw = fs.readFileSync(inFile);
   const activity = JSON.parse(raw);
+
+  if (!Array.isArray(activity) || activity.length === 0) {
+    console.error("❌ No activity data found in", inFile);
+    process.exit(1);
+  }
 
   const counts = {};
   activity.forEach(evt => {
@@ -51,10 +56,10 @@ async function run() {
 
   const buffer = await chartJSNodeCanvas.renderToBuffer(config, "image/svg+xml");
   fs.writeFileSync(outFile, buffer);
-  console.log("Graph saved to", outFile);
+  console.log("✅ Graph saved to", outFile);
 }
 
 run().catch(err => {
-  console.error("Error generating graph:", err);
+  console.error("❌ Error generating graph:", err);
   process.exit(1);
 });
