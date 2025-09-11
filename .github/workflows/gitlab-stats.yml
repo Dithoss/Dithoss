@@ -18,6 +18,7 @@ jobs:
           node-version: '20'
           
       - name: Fetch GitLab Contributions
+        shell: bash
         run: |
           curl -s --fail --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
           "https://dev.hummatech.com/api/v4/users/37/events?per_page=100&after=$(date -d '1 year ago' '+%Y-%m-%d')" > events.json || {
@@ -62,7 +63,6 @@ jobs:
             const eventDate = event.created_at.split('T')[0];
             const eventType = event.action_name;
             
-            // Count different types of contributions
             if (eventType && ['pushed to', 'pushed new', 'created', 'opened', 'merged', 'closed', 'commented on'].includes(eventType)) {
               counts[eventDate] = (counts[eventDate] || 0) + 1;
             }
@@ -258,6 +258,7 @@ jobs:
           cat gitlab-stats.json
           
       - name: Update README
+        shell: bash
         run: |
           if [ -f README.md ] && [ -f gitlab-stats.json ]; then
             node -e "
@@ -271,13 +272,13 @@ jobs:
           ![GitLab Contributions](./gitlab-contributions.svg)
           
           **🔥 Contribution Stats:**
-          - **Total Contributions:** ${stats.total}
-          - **Active Days:** ${stats.activeDays}/365
-          - **Longest Streak:** ${stats.longestStreak} days
-          - **Daily Average:** ${stats.avgDaily}
-          - **Max Daily:** ${stats.maxDailyContributions}
+          - **Total Contributions:** \${stats.total}
+          - **Active Days:** \${stats.activeDays}/365
+          - **Longest Streak:** \${stats.longestStreak} days
+          - **Daily Average:** \${stats.avgDaily}
+          - **Max Daily:** \${stats.maxDailyContributions}
           
-          *Last updated: ${stats.lastUpdated}*
+          *Last updated: \${stats.lastUpdated}*
           <!-- GITLAB-STATS:END -->\`;
               
               if (readme.includes('<!-- GITLAB-STATS:START -->')) {
@@ -290,7 +291,7 @@ jobs:
               }
               
               fs.writeFileSync('README.md', readme);
-              console.log('Updated README with improved GitLab stats');
+              console.log('✅ Updated README with improved GitLab stats');
             "
           fi
           
