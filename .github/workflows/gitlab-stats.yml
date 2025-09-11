@@ -24,7 +24,7 @@ jobs:
       - name: Fetch GitLab Contributions
         run: |
           curl -s --fail --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
-          "https://gitlab.com/api/v4/users/<Dithoss>/events" > events.json
+          "https://dev.hummatech.com/api/v4/users/37/events" > events.json
 
           echo "=== events.json content ==="
           cat events.json
