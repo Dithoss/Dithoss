@@ -5,6 +5,10 @@
   
   <defs>
     <style>
+      <![CDATA[
+      svg {
+        color-scheme: light dark;
+      }
       .title { 
         font-size: 16px; 
         font-weight: 600; 
@@ -34,14 +38,22 @@
         stroke: rgba(27,31,35,0.06);
         stroke-width: 1;
       }
-      
-      @media (prefers-color-scheme: dark) {
-        .title { fill: #f0f6fc; }
-        .month-label, .day-label, .legend-text, .stats-text { fill: #8b949e; }
-        .contribution-cell { stroke: rgba(240,246,252,0.1); }
-      }
+      ]]>
     </style>
-  </defs><text x="20" y="36" class="title">GitLab Contributions</text><text x="45" y="47" class="month-label">Sep</text><text x="105" y="47" class="month-label">Oct</text><text x="165" y="47" class="month-label">Nov</text><text x="240" y="47" class="month-label">Dec</text><text x="300" y="47" class="month-label">Jan</text><text x="375" y="47" class="month-label">Feb</text><text x="435" y="47" class="month-label">Mar</text><text x="495" y="47" class="month-label">Apr</text><text x="555" y="47" class="month-label">May</text><text x="630" y="47" class="month-label">Jun</text><text x="690" y="47" class="month-label">Jul</text><text x="750" y="47" class="month-label">Aug</text><text x="825" y="47" class="month-label">Sep</text><text x="40" y="79" class="day-label">Mon</text><text x="40" y="109" class="day-label">Wed</text><text x="40" y="139" class="day-label">Fri</text><rect x="45" y="55" width="12" height="12" 
+  </defs>
+  
+  <style>
+    <![CDATA[
+    @media (prefers-color-scheme: dark) {
+      .title { fill: #e6edf3 !important; }
+      .month-label { fill: #7d8590 !important; }
+      .day-label { fill: #7d8590 !important; }
+      .legend-text { fill: #7d8590 !important; }
+      .stats-text { fill: #7d8590 !important; }
+      .contribution-cell { stroke: rgba(205,217,229,0.1) !important; }
+    }
+    ]]>
+  </style><text x="20" y="36" class="title">GitLab Contributions</text><text x="45" y="47" class="month-label">Sep</text><text x="105" y="47" class="month-label">Oct</text><text x="165" y="47" class="month-label">Nov</text><text x="240" y="47" class="month-label">Dec</text><text x="300" y="47" class="month-label">Jan</text><text x="375" y="47" class="month-label">Feb</text><text x="435" y="47" class="month-label">Mar</text><text x="495" y="47" class="month-label">Apr</text><text x="555" y="47" class="month-label">May</text><text x="630" y="47" class="month-label">Jun</text><text x="690" y="47" class="month-label">Jul</text><text x="750" y="47" class="month-label">Aug</text><text x="825" y="47" class="month-label">Sep</text><text x="40" y="79" class="day-label">Mon</text><text x="40" y="109" class="day-label">Wed</text><text x="40" y="139" class="day-label">Fri</text><rect x="45" y="55" width="12" height="12" 
         fill="#ebedf0" rx="2" class="contribution-cell">
         <title>Friday, September 6, 2024: 0 contributions</title>
       </rect><rect x="45" y="70" width="12" height="12" 
