@@ -3,7 +3,7 @@ name: Update GitLab Stats
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"  # jalan tiap jam 00:00 UTC
+    - cron: "0 0 * * *" 
 
 jobs:
   update:
@@ -27,12 +27,15 @@ jobs:
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
 
+      - name: Check activity.json exists
+        run: ls -l activity.json || echo "❌ activity.json missing"
+
       - name: Generate graph
         run: node ./scripts/generate-graph.js activity.json gitlab-contributions.svg
-      
+
       - name: Verify output file
-        run: ls -l gitlab-contributions.svg
-      
+        run: ls -l gitlab-contributions.svg || echo "❌ SVG not created"
+
       - name: Commit graph
         run: |
           git config user.name "github-actions[bot]"
