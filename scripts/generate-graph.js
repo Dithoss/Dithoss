@@ -11,6 +11,11 @@ async function run() {
   const inFile = args[2];
   const outFile = args[3];
 
+  if (!fs.existsSync(inFile)) {
+    console.error("Input file not found:", inFile);
+    process.exit(1);
+  }
+
   const raw = fs.readFileSync(inFile);
   const activity = JSON.parse(raw);
 
@@ -38,16 +43,18 @@ async function run() {
       }],
     },
     options: {
-      scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 20 } }
-      }
+      responsive: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 20 } } }
     }
   };
+
   const buffer = await chartJSNodeCanvas.renderToBuffer(config, "image/svg+xml");
   fs.writeFileSync(outFile, buffer);
+  console.log("Graph saved to", outFile);
 }
 
 run().catch(err => {
-  console.error(err);
+  console.error("Error generating graph:", err);
   process.exit(1);
 });

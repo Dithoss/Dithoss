@@ -3,7 +3,7 @@ name: Update GitLab Stats
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"  # setiap hari jam 00:00 UTC
+    - cron: "0 0 * * *"  # jalan tiap jam 00:00 UTC
 
 jobs:
   update:
@@ -29,6 +29,9 @@ jobs:
 
       - name: Generate graph
         run: node ./scripts/generate-graph.js activity.json gitlab-contributions.svg
+
+      - name: Debug - list files
+        run: ls -lah
 
       - name: Commit graph
         run: |
