@@ -11,26 +11,43 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Fetch GitLab Contributions
         run: |
-          curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
-          "https://gitlab.com/api/v4/users/<USERNAME>/events" > events.json
+          curl -s --fail --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
+          "https://gitlab.com/api/v4/users/<Dithoss>/events" > events.json
+
+          echo "=== events.json content ==="
+          cat events.json
 
       - name: Generate SVG
         run: |
           node <<'EOF'
           const fs = require('fs');
-          const events = JSON.parse(fs.readFileSync('events.json'));
+          const events = JSON.parse(fs.readFileSync('events.json', 'utf8'));
+
+          if (!Array.isArray(events)) {
+            console.error("GitLab API did not return an array:", events);
+            process.exit(1);
+          }
+
           const counts = {};
           events.forEach(e => {
+            if (!e.created_at) return;
             const day = e.created_at.split('T')[0];
             counts[day] = (counts[day] || 0) + 1;
           });
-          let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="100">`;
+
+          let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="120">`;
           let x = 10;
           for (const [day, count] of Object.entries(counts)) {
             const color = count > 5 ? "green" : count > 2 ? "lightgreen" : "gray";
@@ -40,10 +57,12 @@ jobs:
             x += 12;
           }
           svg += `</svg>`;
+
           fs.writeFileSync('gitlab-contributions.svg', svg);
+          console.log("✅ gitlab-contributions.svg generated");
           EOF
 
-      - name: Verify file exists
+      - name: Verify output file
         run: ls -l gitlab-contributions.svg
 
       - name: Commit & Push
