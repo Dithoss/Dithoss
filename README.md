@@ -1,10 +1,9 @@
-## My GitLab Activity
-![GitLab Stats](./gitlab-contributions.svg)
-<!--
-**
-- 🔭 I’m currently Intern in Hummatech
-- 🌱 I’m currently learning Machine Learning, Deep Learning
-- 💬 Ask me about Gym, Data science math related and Economic strategies
--->
+<!-- GITLAB-STATS:START -->
+![GitLab Contributions](./gitlab-contributions.svg)
 
-
+**📈 GitLab Activity:**
+- 🔥 Total Contributions: **156**
+- 📅 Active Days: **89**
+- ⚡ Daily Average: **2.1**
+- 🕐 Last Updated: *2025-09-11*
+<!-- GITLAB-STATS:END -->
