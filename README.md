@@ -4,11 +4,11 @@
 ![GitLab Contributions](./gitlab-contributions.svg)
 
 **🔥 Contribution Stats:**
-- **Total Contributions:** 91
-- **Active Days:** 23/365
-- **Longest Streak:** 5 days
-- **Daily Average:** 0.2
-- **Max Daily:** 14
+- **Total Contributions:** 0
+- **Active Days:** 0/365
+- **Longest Streak:** 0 days
+- **Daily Average:** 0
+- **Max Daily:** 0
 
-*Last updated: 2025-10-21*
+*Last updated: 2025-10-22*
 <!-- GITLAB-STATS:END -->
